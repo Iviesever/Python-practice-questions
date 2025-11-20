@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{5f287839-537e-4e49-96ad-67fdd6986122}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>PS.pyw</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="PS.pyw" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="build\PS\warn-PS.txt" />
+    <Content Include="build\PS\xref-PS.html" />
+    <Content Include="favicon.ico" />
+    <Content Include="题库\毛概\导论.txt" />
+    <Content Include="题库\毛概\第1章.txt" />
+    <Content Include="题库\毛概\第2章.txt" />
+    <Content Include="题库\毛概\第3章.txt" />
+    <Content Include="题库\毛概\第4章.txt" />
+    <Content Include="题库\毛概\第5章.txt" />
+    <Content Include="题库\毛概\第6章.txt" />
+    <Content Include="题库\毛概\第7章.txt" />
+    <Content Include="题库\毛概\第8章.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="build\" />
+    <Folder Include="build\PS" />
+    <Folder Include="题库\" />
+    <Folder Include="题库\毛概" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>
