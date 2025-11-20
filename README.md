@@ -51,7 +51,7 @@
 
 ```text
 Python刷题系统/
-├── main.py          # 主程序代码
+├── PS.pyw          # 主程序代码
 ├── config.json      # (自动生成) 用户配置文件
 ├── mistakes.json    # (自动生成) 错题记录数据库
 ├── favicon.ico      # (可选) 程序图标
