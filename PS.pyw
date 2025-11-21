@@ -330,12 +330,10 @@ class QuizApp:
         file_frame.pack(fill="x", pady=10, expand=True)
 
 
-        # ====== 【新增部分开始】在这里插入错题模式勾选框 ======
         mistake_ctrl_frame = tk.Frame(file_frame)
         mistake_ctrl_frame.pack(fill="x", pady=(0, 5))
         
         self.var_mistake_mode = tk.BooleanVar(value=False)
-        # 这里的 command=self.refresh_file_list 可选，用于勾选时刷新题目统计等，也可以不加
         chk_mistake = tk.Checkbutton(mistake_ctrl_frame, text="采用错题模式: 错", variable=self.var_mistake_mode, font=fonts["normal"], fg="#d32f2f")
         chk_mistake.pack(side="left")
         
@@ -343,7 +341,6 @@ class QuizApp:
         self.combo_mistake.pack(side="left", padx=5)
         
         tk.Label(mistake_ctrl_frame, text="次的题", font=fonts["normal"]).pack(side="left")
-        # ====== 【新增部分结束】 ======
 
         list_scroll = tk.Scrollbar(file_frame)
         list_scroll.pack(side="right", fill="y")
@@ -352,8 +349,6 @@ class QuizApp:
         self.file_listbox.pack(side="left", fill="both", expand=True)
         list_scroll.config(command=self.file_listbox.yview)
         
-        #if self.combo_repo:
-            #self.refresh_file_list() 
         
         filter_frame = tk.LabelFrame(main_frame, text="2. 题型过滤", font=fonts["normal"], padx=10, pady=10)
         filter_frame.pack(fill="x", pady=10)
@@ -413,7 +408,6 @@ class QuizApp:
             
             self.all_questions_cache = QuestionParser.parse_target_files(self.current_txt_paths)
 
-            # === 恢复选中状态逻辑 ===
             last_repo = self.cfg.get("last_repo")
             last_files = self.cfg.get("last_files") or []
 
@@ -440,7 +434,6 @@ class QuizApp:
                 self.file_listbox.select_set(0, tk.END)
             # ========================
 
-            # ====== 【新增部分】更新错题下拉框的选项 ======
             local_max_err = 0
             if self.all_questions_cache:
                 for q in self.all_questions_cache:
@@ -455,7 +448,6 @@ class QuizApp:
                 if self.combo_mistake.get() not in [str(v) for v in vals]:
                     if local_max_err > 0: self.combo_mistake.current(0) # 默认选 "所有"
                     else: self.combo_mistake.set("无")
-            # ===========================================
 
 
 
@@ -493,16 +485,11 @@ class QuizApp:
             # 重新构建完整路径用于解析（如果你没有缓存机制，就用这个；如果有all_questions_cache，就用下面的过滤）
             files = [os.path.join("题库", repo_dir, fname) for fname in selected_filenames]
         
-        # 1. 获取所选文件的所有题目
-        # 如果你之前用的是 parse_target_files(files)，请保持；
-        # 如果想利用缓存，可以写: qs = [q for q in self.all_questions_cache if q.source_file in selected_filenames]
         qs = QuestionParser.parse_target_files(files) 
         
-        # 2. 过滤题型
         allowed = self.get_allowed_types()
         qs = [q for q in qs if q.q_type in allowed]
         
-        # ====== 【新增核心逻辑】判断是否开启错题模式 ======
         if self.var_mistake_mode.get():
             target_err = self.combo_mistake.get() # 获取下拉框的值 (如 "所有", "1", "2"...)
             if not target_err or target_err == "无":
@@ -522,7 +509,6 @@ class QuizApp:
             
             if not qs:
                 return messagebox.showinfo("提示", f"在所选文件中，没有找到符合“错误{target_err}次”的题目。")
-        # =================================================
         
         if not qs: return messagebox.showerror("错误", "所选条件（文件/题型/错题）下没有题目！")
         self.start_quiz(qs, shuffle)
@@ -542,7 +528,6 @@ class QuizApp:
         
         qs = []
         
-        # 2. 根据是否选择“所有”进行筛选
         if val == "所有":
             # 筛选逻辑：属于选中文件 + 错误次数大于0 + 题型匹配
             qs = [
@@ -627,52 +612,40 @@ class QuizApp:
         right_frame = tk.Frame(top_bar, bg="#eee")
         right_frame.pack(side="right")
 
-        # === 新增：获取错误次数并显示 ===
         err_count = self.mistake_mgr.get_count(q.get_id())
-        # 如果有错误，显示红色；如果没有，显示灰色
         err_color = "#d32f2f" if err_count > 0 else "#999"
         tk.Label(right_frame, text=f"错误: {err_count}", bg="#eee", font=fonts["ui"], fg=err_color).pack(side="left", padx=10)
-        # ============================
-
         
         tk.Label(right_frame, text=f"来源: {q.source_file}", bg="#eee", font=fonts["ui"], fg="#666").pack(side="left", padx=10)
         tk.Button(right_frame, text="↷ 跳转", command=self.ask_jump_question, font=fonts["ui"], bg="#b2dfdb").pack(side="left")
 
-        # --- 底部操作区 (修改重点) ---
         bottom_frame = tk.Frame(self.root, pady=20, bg="#f0f0f0")
         bottom_frame.pack(side="bottom", fill="x")
 
         self.feedback_label = tk.Label(bottom_frame, text="", font=("微软雅黑", fonts["normal"][1], "bold"), bg="#f0f0f0")
         self.feedback_label.pack(pady=(0, 10))
 
-        # 总容器：anchor="center" 保证整体居中
         btn_container = tk.Frame(bottom_frame, bg="#f0f0f0")
         btn_container.pack(anchor="center") 
 
-        # 1. 提交答案 (放在最上方)
         self.btn_submit = tk.Button(btn_container, text="提交答案", command=self.check_answer, 
                                     bg="#4caf50", fg="white", font=fonts["btn"], width=20, height=2)
         self.btn_submit.pack(side="top", pady=(0, 15)) # pady 保证和下方按钮有间距
 
-        # 2. 导航按钮容器 (放在提交按钮下方)
         nav_frame = tk.Frame(btn_container, bg="#f0f0f0")
         nav_frame.pack(side="top")
 
-        # 上一题 (紧挨着放在左边)
         self.btn_prev = tk.Button(nav_frame, text="<< 上一题", command=self.prev_question, 
                                   font=fonts["btn"], width=15, height=2, bg="#e0e0e0")
         self.btn_prev.pack(side="left", padx=10) # padx 保证两个按钮中间有空隙
         
-        # 下一题 (紧挨着放在右边)
         self.btn_next = tk.Button(nav_frame, text="下一题 >>", command=self.next_question, 
                                   state="normal", font=fonts["btn"], width=15, height=2, bg="#2196f3", fg="white")
         self.btn_next.pack(side="left", padx=10)
 
-        # 第一题时禁用上一题
         if self.current_index == 0:
             self.btn_prev.config(state="disabled")
 
-        # --- 中间题目显示区 (保持不变) ---
         canvas = tk.Canvas(self.root, bg="white")
         scrollbar = tk.Scrollbar(self.root, orient="vertical", command=canvas.yview)
         self.scroll_frame = tk.Frame(canvas, bg="white")
@@ -765,7 +738,6 @@ class QuizApp:
             self.session_stats['correct'] += 1
             self.feedback_label.config(text="回答正确！✅", fg="green")
             self.btn_submit.config(state="disabled")
-            # 删除了: self.btn_next.config(state="normal")，因为现在它默认就是可用的
             
             self.root.after(600, self.next_question) 
         else:
@@ -775,7 +747,6 @@ class QuizApp:
             msg = f"回答错误 ❌\n正确答案: {ans_show}"
             self.feedback_label.config(text=msg, fg="red")
             self.btn_submit.config(state="disabled")
-            # 删除了: self.btn_next.config(state="normal")
 
     def next_question(self):
         self.current_index += 1
