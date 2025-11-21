@@ -25,7 +25,7 @@
 
 ### 1. 环境要求
 
-确保你的电脑上安装了 [Python 3.x](https://www.python.org/)。
+确保你的电脑上安装了 [Python 3.x](https://www.python.org/) 。
 本项目仅依赖 Python 标准库（`tkinter`, `json`, `re`, `os` 等），**无需安装任何第三方 pip 包**。
 
 ### 2. 📂 如何制作题库 (关键步骤)
@@ -35,7 +35,7 @@
 1.  在项目根目录下找到（或新建）`题库` 文件夹。
 2.  在 `题库` 文件夹内新建一个子文件夹（例如：`近代史纲要`、`Python程序设计`），这将作为一个独立的题库分类。
 3.  **获取题目文本**：
-    *   在电脑浏览器打开学习通的 **作业**、**测验** 或 **考试查看试卷** 页面。
+    *   在电脑浏览器打开学习通的 **作业**、**测验** 或 **考试查看试卷** 等页面。
     *   **全选页面内容**：使用快捷键 **`Ctrl + A`**
     *   **复制** (`Ctrl + C`) 选中的所有文字。
 4.  **保存文件**：
@@ -44,13 +44,12 @@
     *   保存并关闭，**编码格式建议使用 UTF-8**。
 
 ```text
-Python刷题系统/
-├── PS.pyw          # 主程序代码
+Python 刷题/
+├── PS.exe           # 主程序
 ├── config.json      # (自动生成) 用户配置文件
 ├── mistakes.json    # (自动生成) 错题记录数据库
 ├── favicon.ico      # 程序图标
-├── README.md        # 说明文档
-└── 题库/            # 存放题目数据的文件夹
+└── 题库/             # 存放题目数据的文件夹
     ├── 马克思主义原理/
     │   ├── 第一章测验.txt
     │   └── 期末模拟.txt
@@ -62,9 +61,9 @@ Python刷题系统/
 
 ### 3. 运行软件
 
-Windows端：下载 release 的 PS.exe，双击运行
+*   Windows端：下载 release 的 PS.exe，双击运行
 
-Android端：下载 [pydroid3](https://blog.qaiu.top/archives/pydroid3v72)，打开 PS.pyw 
+*   Android端：下载 [pydroid3](https://blog.qaiu.top/archives/pydroid3v72) 到手机上，下载项目文件中的 [PS.pyw](https://github.com/Iviesever/Python-practice-questions/blob/master/PS.pyw) ，用 pydroid3 打开
 
 ## 🛠️ 目录结构说明
 
