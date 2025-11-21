@@ -45,12 +45,11 @@
 
 ```text
 Python 刷题/
-├── PS.pyw          # 主程序代码
+├── PS.exe           # 主程序
 ├── config.json      # (自动生成) 用户配置文件
 ├── mistakes.json    # (自动生成) 错题记录数据库
 ├── favicon.ico      # 程序图标
-├── README.md        # 说明文档
-└── 题库/            # 存放题目数据的文件夹
+└── 题库/             # 存放题目数据的文件夹
     ├── 马克思主义原理/
     │   ├── 第一章测验.txt
     │   └── 期末模拟.txt
@@ -64,7 +63,7 @@ Python 刷题/
 
 Windows端：下载 release 的 PS.exe，双击运行
 
-Android端：下载 [pydroid3](https://blog.qaiu.top/archives/pydroid3v72)，打开 PS.pyw 
+Android端：下载 [pydroid3](https://blog.qaiu.top/archives/pydroid3v72)到手机上，下载项目文件中的 [PS.pyw](https://github.com/Iviesever/Python-practice-questions/PS.pyw)，用 pydroid3 打开
 
 ## 🛠️ 目录结构说明
 
