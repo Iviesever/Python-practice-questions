@@ -25,7 +25,7 @@
 
 ### 1. 环境要求
 
-确保你的电脑上安装了 [Python 3.x](https://www.python.org/)。
+确保你的电脑上安装了 [Python 3.x](https://www.python.org/) 。
 本项目仅依赖 Python 标准库（`tkinter`, `json`, `re`, `os` 等），**无需安装任何第三方 pip 包**。
 
 ### 2. 📂 如何制作题库 (关键步骤)
@@ -63,7 +63,7 @@ Python 刷题/
 
 Windows端：下载 release 的 PS.exe，双击运行
 
-Android端：下载 [pydroid3](https://blog.qaiu.top/archives/pydroid3v72)到手机上，下载项目文件中的 [PS.pyw](https://github.com/Iviesever/Python-practice-questions/blob/master/PS.pyw)，用 pydroid3 打开
+Android端：下载 [pydroid3](https://blog.qaiu.top/archives/pydroid3v72) 到手机上，下载项目文件中的 [PS.pyw](https://github.com/Iviesever/Python-practice-questions/blob/master/PS.pyw) ，用 pydroid3 打开
 
 ## 🛠️ 目录结构说明
 
