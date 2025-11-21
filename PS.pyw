@@ -15,7 +15,10 @@ class ConfigManager:
             "btn_scale": 1.0,
             "auto_submit": True, 
             "confirm_exit": True,
-            "default_repo": ""
+            #"default_repo": "",
+            "select_all_on_change": False,
+            "last_repo": "",       # <-- 新增：记录上次题库
+            "last_files": []       # <-- 新增：记录上次选中的文件名列表
         }
         self.config = self.defaults.copy()
         self.load()
@@ -231,24 +234,24 @@ class QuizApp:
         
         ttk.Separator(win, orient='horizontal').pack(fill='x', pady=20)
 
-        tk.Label(win, text="默认启动题库:", font=fonts["normal"]).pack(pady=5)
+        # tk.Label(win, text="默认启动题库:", font=fonts["normal"]).pack(pady=5)
         
-        base_dir = "题库"
-        if not os.path.exists(base_dir): os.makedirs(base_dir)
-        repos = [d for d in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, d))]
+        # base_dir = "题库"
+        # if not os.path.exists(base_dir): os.makedirs(base_dir)
+        # repos = [d for d in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, d))]
         
-        combo_def_repo = ttk.Combobox(win, values=repos, state="readonly", font=fonts["normal"], width=20)
-        combo_def_repo.pack(pady=5)
+        # combo_def_repo = ttk.Combobox(win, values=repos, state="readonly", font=fonts["normal"], width=20)
+        # combo_def_repo.pack(pady=5)
         
-        curr_repo = self.cfg.get("default_repo")
-        if curr_repo and curr_repo in repos:
-            combo_def_repo.set(curr_repo)
-        elif repos:
-            combo_def_repo.current(0)
-        else:
-            combo_def_repo.set("无题库")
+        # curr_repo = self.cfg.get("default_repo")
+        # if curr_repo and curr_repo in repos:
+            # combo_def_repo.set(curr_repo)
+        # elif repos:
+            # combo_def_repo.current(0)
+        # else:
+            # combo_def_repo.set("无题库")
 
-        ttk.Separator(win, orient='horizontal').pack(fill='x', pady=20)
+        # ttk.Separator(win, orient='horizontal').pack(fill='x', pady=20)
 
         var_auto = tk.BooleanVar(value=self.cfg.get("auto_submit"))
         chk_auto = tk.Checkbutton(win, text="单选/判断题点击选项直接判分", variable=var_auto, font=fonts["normal"])
@@ -260,15 +263,23 @@ class QuizApp:
         chk_exit = tk.Checkbutton(win, text="返回主页时显示确认提示", variable=var_exit, font=fonts["normal"])
         chk_exit.pack(pady=5, anchor="w", padx=50)
 
+
+        var_sel_all = tk.BooleanVar(value=self.cfg.get("select_all_on_change"))
+        chk_sel_all = tk.Checkbutton(win, text="切换/加载题库时默认全选文件", variable=var_sel_all, font=fonts["normal"])
+        chk_sel_all.pack(pady=5, anchor="w", padx=50)
+
         def save_conf():
             self.cfg.set("font_size_title", scale_font.get())
             self.cfg.set("font_size_base", scale_base.get())
             self.cfg.set("auto_submit", var_auto.get())
             self.cfg.set("confirm_exit", var_exit.get())
+
+            # 保存全选配置
+            self.cfg.set("select_all_on_change", var_sel_all.get())
             
-            new_repo = combo_def_repo.get()
-            if new_repo and new_repo != "无题库":
-                self.cfg.set("default_repo", new_repo)
+            # new_repo = combo_def_repo.get()
+            # if new_repo and new_repo != "无题库":
+            #     self.cfg.set("default_repo", new_repo)
             
             messagebox.showinfo("提示", "设置已保存！")
             win.destroy()
@@ -306,9 +317,10 @@ class QuizApp:
             self.combo_repo = ttk.Combobox(repo_frame, values=repos, state="readonly", font=fonts["normal"], width=20)
             self.combo_repo.pack(side="left", padx=10)
             
-            def_repo = self.cfg.get("default_repo")
-            if def_repo in repos:
-                self.combo_repo.set(def_repo)
+            # === 修改：加载上次记忆的题库 ===
+            last_repo = self.cfg.get("last_repo")
+            if last_repo and last_repo in repos:
+                self.combo_repo.set(last_repo)
             else:
                 self.combo_repo.current(0)
                 
@@ -316,7 +328,23 @@ class QuizApp:
 
         file_frame = tk.LabelFrame(main_frame, text="1. 选择题目文件 (Ctrl+点击多选)", font=fonts["normal"], padx=10, pady=10)
         file_frame.pack(fill="x", pady=10, expand=True)
+
+
+        # ====== 【新增部分开始】在这里插入错题模式勾选框 ======
+        mistake_ctrl_frame = tk.Frame(file_frame)
+        mistake_ctrl_frame.pack(fill="x", pady=(0, 5))
         
+        self.var_mistake_mode = tk.BooleanVar(value=False)
+        # 这里的 command=self.refresh_file_list 可选，用于勾选时刷新题目统计等，也可以不加
+        chk_mistake = tk.Checkbutton(mistake_ctrl_frame, text="采用错题模式: 错", variable=self.var_mistake_mode, font=fonts["normal"], fg="#d32f2f")
+        chk_mistake.pack(side="left")
+        
+        self.combo_mistake = ttk.Combobox(mistake_ctrl_frame, width=5, state="readonly", font=fonts["normal"])
+        self.combo_mistake.pack(side="left", padx=5)
+        
+        tk.Label(mistake_ctrl_frame, text="次的题", font=fonts["normal"]).pack(side="left")
+        # ====== 【新增部分结束】 ======
+
         list_scroll = tk.Scrollbar(file_frame)
         list_scroll.pack(side="right", fill="y")
         self.file_listbox = tk.Listbox(file_frame, selectmode=tk.MULTIPLE, height=6, 
@@ -324,8 +352,8 @@ class QuizApp:
         self.file_listbox.pack(side="left", fill="both", expand=True)
         list_scroll.config(command=self.file_listbox.yview)
         
-        if self.combo_repo:
-            self.refresh_file_list() 
+        #if self.combo_repo:
+            #self.refresh_file_list() 
         
         filter_frame = tk.LabelFrame(main_frame, text="2. 题型过滤", font=fonts["normal"], padx=10, pady=10)
         filter_frame.pack(fill="x", pady=10)
@@ -343,41 +371,106 @@ class QuizApp:
         tk.Button(action_frame, text="随机练习", width=btn_w, height=2, font=fonts["btn"], bg="#e3f2fd",
                   command=lambda: self.start_selected_practice(shuffle=True)).pack(side="left", padx=20)
         
-        tk.Frame(main_frame, height=2, bg="#ddd").pack(fill="x", pady=15)
-        mistake_frame = tk.Frame(main_frame)
-        mistake_frame.pack(pady=5)
+        # tk.Frame(main_frame, height=2, bg="#ddd").pack(fill="x", pady=15)
+        # mistake_frame = tk.Frame(main_frame)
+        # mistake_frame.pack(pady=5)
         
-        tk.Label(mistake_frame, text="错题复习: 错", font=fonts["normal"]).pack(side="left")
-        max_err = self.mistake_mgr.get_max_errors()
-        vals = list(range(1, max_err + 1)) if max_err > 0 else ["无"]
-        self.combo_mistake = ttk.Combobox(mistake_frame, values=vals, width=5, state="readonly", font=fonts["normal"])
-        if max_err > 0: self.combo_mistake.current(0)
-        else: self.combo_mistake.set("无")
-        self.combo_mistake.pack(side="left", padx=5)
-        tk.Label(mistake_frame, text="次的题", font=fonts["normal"]).pack(side="left")
-        tk.Button(mistake_frame, text="Go", font=fonts["btn"], bg="#ffe0b2", command=self.start_mistake_review).pack(side="left", padx=15)
+        # tk.Label(mistake_frame, text="错题复习: 错", font=fonts["normal"]).pack(side="left")
+        # max_err = self.mistake_mgr.get_max_errors()
+        # vals = list(range(1, max_err + 1)) if max_err > 0 else ["无"]
+        # self.combo_mistake = ttk.Combobox(mistake_frame, values=vals, width=5, state="readonly", font=fonts["normal"])
+        # if max_err > 0: self.combo_mistake.current(0)
+        # else: self.combo_mistake.set("无")
+        # self.combo_mistake.pack(side="left", padx=5)
+        # tk.Label(mistake_frame, text="次的题", font=fonts["normal"]).pack(side="left")
+        # tk.Button(mistake_frame, text="Go", font=fonts["btn"], bg="#ffe0b2", command=self.start_mistake_review).pack(side="left", padx=15)
 
+        if getattr(self, 'combo_repo', None):
+            self.refresh_file_list()
 
 
     def refresh_file_list(self, event=None):
         if not getattr(self, 'combo_repo', None): return
+        if not self.combo_repo.winfo_exists(): return
+
         current_repo = self.combo_repo.get()
-        
         self.file_listbox.delete(0, tk.END)
         
         search_path = os.path.join("题库", current_repo, "*.txt")
         self.current_txt_paths = glob.glob(search_path) 
         
+        # 用于映射：文件名 -> Listbox索引
+        name_to_index = {}
+
         if not self.current_txt_paths:
             self.file_listbox.insert(tk.END, "(该文件夹下无txt文件)")
-        else:
-            for p in self.current_txt_paths:
-                self.file_listbox.insert(tk.END, os.path.basename(p))
-        
-        if self.current_txt_paths:
-            self.all_questions_cache = QuestionParser.parse_target_files(self.current_txt_paths)
-        else:
             self.all_questions_cache = []
+        else:
+            for idx, p in enumerate(self.current_txt_paths):
+                fname = os.path.basename(p)
+                self.file_listbox.insert(tk.END, fname)
+                name_to_index[fname] = idx
+            
+            self.all_questions_cache = QuestionParser.parse_target_files(self.current_txt_paths)
+
+            # === 恢复选中状态逻辑 ===
+            last_repo = self.cfg.get("last_repo")
+            last_files = self.cfg.get("last_files") or []
+
+            # 只有当当前下拉框显示的题库 == 配置文件里记录的上次题库时，才尝试恢复
+            if current_repo == last_repo:
+                missing_files = []
+                has_selection = False
+                
+                for f_name in last_files:
+                    if f_name in name_to_index:
+                        self.file_listbox.select_set(name_to_index[f_name])
+                        has_selection = True
+                    else:
+                        # 如果上次记录的文件不在当前列表里，说明文件丢失了
+                        missing_files.append(f_name)
+                
+                # 如果有丢失的文件，弹出警告
+                if missing_files:
+                    msg = "以下上次选中的文件未找到（可能已被删除或重命名）：\n\n" + "\n".join(missing_files)
+                    messagebox.showwarning("文件丢失提示", msg)
+            
+            # 如果不是上次的题库，或者上次没选文件，则检查是否配置了“默认全选”
+            elif self.cfg.get("select_all_on_change"):
+                self.file_listbox.select_set(0, tk.END)
+            # ========================
+
+            # ====== 【新增部分】更新错题下拉框的选项 ======
+            local_max_err = 0
+            if self.all_questions_cache:
+                for q in self.all_questions_cache:
+                    cnt = self.mistake_mgr.get_count(q.get_id())
+                    if cnt > local_max_err: local_max_err = cnt
+            
+            if getattr(self, 'combo_mistake', None) and self.combo_mistake.winfo_exists():
+                vals = ["所有"] + list(range(1, local_max_err + 1)) if local_max_err > 0 else ["无"]
+                self.combo_mistake['values'] = vals
+                
+                # 如果之前没选值，或者当前值不在新列表里，重置为第一个
+                if self.combo_mistake.get() not in [str(v) for v in vals]:
+                    if local_max_err > 0: self.combo_mistake.current(0) # 默认选 "所有"
+                    else: self.combo_mistake.set("无")
+            # ===========================================
+
+
+
+        # 错题库联动逻辑
+        local_max_err = 0
+        if self.all_questions_cache:
+            for q in self.all_questions_cache:
+                cnt = self.mistake_mgr.get_count(q.get_id())
+                if cnt > local_max_err: local_max_err = cnt
+        
+        if getattr(self, 'combo_mistake', None) and self.combo_mistake.winfo_exists():
+            vals = ["所有"] + list(range(1, local_max_err + 1)) if local_max_err > 0 else ["无"]
+            self.combo_mistake['values'] = vals
+            if local_max_err > 0: self.combo_mistake.current(0)
+            else: self.combo_mistake.set("无")
 
 
     def get_allowed_types(self):
@@ -392,28 +485,89 @@ class QuizApp:
         if "(该文件夹下无txt文件)" in selected_filenames:
             return
         
-        files = []
+        # 保存配置
         if getattr(self, 'combo_repo', None):
             repo_dir = self.combo_repo.get()
+            self.cfg.set("last_repo", repo_dir)
+            self.cfg.set("last_files", selected_filenames)
+            # 重新构建完整路径用于解析（如果你没有缓存机制，就用这个；如果有all_questions_cache，就用下面的过滤）
             files = [os.path.join("题库", repo_dir, fname) for fname in selected_filenames]
         
-        qs = QuestionParser.parse_target_files(files)
+        # 1. 获取所选文件的所有题目
+        # 如果你之前用的是 parse_target_files(files)，请保持；
+        # 如果想利用缓存，可以写: qs = [q for q in self.all_questions_cache if q.source_file in selected_filenames]
+        qs = QuestionParser.parse_target_files(files) 
         
+        # 2. 过滤题型
         allowed = self.get_allowed_types()
         qs = [q for q in qs if q.q_type in allowed]
         
-        if not qs: return messagebox.showerror("错误", "所选文件和题型组合下没有题目！")
+        # ====== 【新增核心逻辑】判断是否开启错题模式 ======
+        if self.var_mistake_mode.get():
+            target_err = self.combo_mistake.get() # 获取下拉框的值 (如 "所有", "1", "2"...)
+            if not target_err or target_err == "无":
+                return messagebox.showinfo("提示", "当前没有错题记录，无法开启错题模式。")
+            
+            filtered_qs = []
+            for q in qs:
+                err_count = self.mistake_mgr.get_count(q.get_id())
+                if target_err == "所有":
+                    if err_count > 0: filtered_qs.append(q)
+                else:
+                    try:
+                        if err_count == int(target_err): filtered_qs.append(q)
+                    except: pass
+            
+            qs = filtered_qs # 用过滤后的错题列表覆盖原列表
+            
+            if not qs:
+                return messagebox.showinfo("提示", f"在所选文件中，没有找到符合“错误{target_err}次”的题目。")
+        # =================================================
+        
+        if not qs: return messagebox.showerror("错误", "所选条件（文件/题型/错题）下没有题目！")
         self.start_quiz(qs, shuffle)
 
     def start_mistake_review(self):
         val = self.combo_mistake.get()
         if val in ["无", ""]: return
         
-        allowed = self.get_allowed_types()
-        qs = [q for q in self.all_questions_cache 
-              if self.mistake_mgr.get_count(q.get_id()) == int(val) and q.q_type in allowed]
+        # 1. 获取列表框中选中的文件名
+        idxs = self.file_listbox.curselection()
+        if not idxs:
+            messagebox.showwarning("提示", "请先在左侧列表中勾选要复习的题目文件！")
+            return
         
-        if not qs: return messagebox.showinfo("提示", "该错误次数下没有符合选中题型的题目")
+        selected_files = set(self.file_listbox.get(i) for i in idxs)
+        allowed = self.get_allowed_types()
+        
+        qs = []
+        
+        # 2. 根据是否选择“所有”进行筛选
+        if val == "所有":
+            # 筛选逻辑：属于选中文件 + 错误次数大于0 + 题型匹配
+            qs = [
+                q for q in self.all_questions_cache 
+                if q.source_file in selected_files 
+                and self.mistake_mgr.get_count(q.get_id()) > 0 
+                and q.q_type in allowed
+            ]
+        else:
+            # 筛选逻辑：属于选中文件 + 错误次数等于特定值 + 题型匹配
+            try:
+                target_count = int(val)
+                qs = [
+                    q for q in self.all_questions_cache 
+                    if q.source_file in selected_files 
+                    and self.mistake_mgr.get_count(q.get_id()) == target_count 
+                    and q.q_type in allowed
+                ]
+            except ValueError:
+                return # 防止解析错误
+
+        if not qs: 
+            messagebox.showinfo("提示", "在所选文件和题型中，没有找到符合条件的错题。")
+            return
+            
         self.start_quiz(qs, shuffle=True)
 
     def start_quiz(self, questions, shuffle):
@@ -461,6 +615,7 @@ class QuizApp:
         q = self.current_q = self.current_queue[self.current_index]
         fonts = self.get_fonts()
         
+        # --- 顶部导航栏 ---
         top_bar = tk.Frame(self.root, bg="#eee", pady=8, padx=10)
         top_bar.pack(fill="x", side="top")
         
@@ -471,28 +626,53 @@ class QuizApp:
         
         right_frame = tk.Frame(top_bar, bg="#eee")
         right_frame.pack(side="right")
+
+        # === 新增：获取错误次数并显示 ===
+        err_count = self.mistake_mgr.get_count(q.get_id())
+        # 如果有错误，显示红色；如果没有，显示灰色
+        err_color = "#d32f2f" if err_count > 0 else "#999"
+        tk.Label(right_frame, text=f"错误: {err_count}", bg="#eee", font=fonts["ui"], fg=err_color).pack(side="left", padx=10)
+        # ============================
+
         
         tk.Label(right_frame, text=f"来源: {q.source_file}", bg="#eee", font=fonts["ui"], fg="#666").pack(side="left", padx=10)
         tk.Button(right_frame, text="↷ 跳转", command=self.ask_jump_question, font=fonts["ui"], bg="#b2dfdb").pack(side="left")
 
+        # --- 底部操作区 (修改重点) ---
         bottom_frame = tk.Frame(self.root, pady=20, bg="#f0f0f0")
         bottom_frame.pack(side="bottom", fill="x")
 
         self.feedback_label = tk.Label(bottom_frame, text="", font=("微软雅黑", fonts["normal"][1], "bold"), bg="#f0f0f0")
         self.feedback_label.pack(pady=(0, 10))
 
+        # 总容器：anchor="center" 保证整体居中
         btn_container = tk.Frame(bottom_frame, bg="#f0f0f0")
         btn_container.pack(anchor="center") 
 
-        btn_w = 15
+        # 1. 提交答案 (放在最上方)
         self.btn_submit = tk.Button(btn_container, text="提交答案", command=self.check_answer, 
-                                    bg="#4caf50", fg="white", font=fonts["btn"], width=btn_w, height=2)
-        self.btn_submit.pack(side="left", padx=20)
-        
-        self.btn_next = tk.Button(btn_container, text="下一题", command=self.next_question, 
-                                  state="disabled", font=fonts["btn"], width=btn_w, height=2)
-        self.btn_next.pack(side="left", padx=20)
+                                    bg="#4caf50", fg="white", font=fonts["btn"], width=20, height=2)
+        self.btn_submit.pack(side="top", pady=(0, 15)) # pady 保证和下方按钮有间距
 
+        # 2. 导航按钮容器 (放在提交按钮下方)
+        nav_frame = tk.Frame(btn_container, bg="#f0f0f0")
+        nav_frame.pack(side="top")
+
+        # 上一题 (紧挨着放在左边)
+        self.btn_prev = tk.Button(nav_frame, text="<< 上一题", command=self.prev_question, 
+                                  font=fonts["btn"], width=15, height=2, bg="#e0e0e0")
+        self.btn_prev.pack(side="left", padx=10) # padx 保证两个按钮中间有空隙
+        
+        # 下一题 (紧挨着放在右边)
+        self.btn_next = tk.Button(nav_frame, text="下一题 >>", command=self.next_question, 
+                                  state="normal", font=fonts["btn"], width=15, height=2, bg="#2196f3", fg="white")
+        self.btn_next.pack(side="left", padx=10)
+
+        # 第一题时禁用上一题
+        if self.current_index == 0:
+            self.btn_prev.config(state="disabled")
+
+        # --- 中间题目显示区 (保持不变) ---
         canvas = tk.Canvas(self.root, bg="white")
         scrollbar = tk.Scrollbar(self.root, orient="vertical", command=canvas.yview)
         self.scroll_frame = tk.Frame(canvas, bg="white")
@@ -585,8 +765,9 @@ class QuizApp:
             self.session_stats['correct'] += 1
             self.feedback_label.config(text="回答正确！✅", fg="green")
             self.btn_submit.config(state="disabled")
-            self.btn_next.config(state="normal", bg="#2196f3", fg="white")
-            self.root.after(600, self.next_question)
+            # 删除了: self.btn_next.config(state="normal")，因为现在它默认就是可用的
+            
+            self.root.after(600, self.next_question) 
         else:
             self.mistake_mgr.add_mistake(q.get_id())
             ans_show = q.correct_answer
@@ -594,11 +775,16 @@ class QuizApp:
             msg = f"回答错误 ❌\n正确答案: {ans_show}"
             self.feedback_label.config(text=msg, fg="red")
             self.btn_submit.config(state="disabled")
-            self.btn_next.config(state="normal", bg="#2196f3", fg="white")
+            # 删除了: self.btn_next.config(state="normal")
 
     def next_question(self):
         self.current_index += 1
         self.show_question_ui()
+
+    def prev_question(self):
+        if self.current_index > 0:
+            self.current_index -= 1
+            self.show_question_ui()
 
 if __name__ == "__main__":
     root = tk.Tk()

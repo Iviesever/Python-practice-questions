@@ -4,5 +4,10 @@
   "btn_scale": 1.0,
   "auto_submit": true,
   "confirm_exit": false,
+  "select_all_on_change": false,
+  "last_repo": "\u6bdb\u6982",
+  "last_files": [
+    "\u7b2c1\u7ae0.txt"
+  ],
   "default_repo": "\u6bdb\u6982"
 }
