@@ -46,7 +46,8 @@
 ### 3. 运行软件
 
 Windows端：下载 release 的 PS.exe，双击运行
-Android端：下载 pydroid3[https://blog.qaiu.top/archives/pydroid3v72]，打开 PS.pyw 
+
+Android端：下载 [pydroid3](https://blog.qaiu.top/archives/pydroid3v72)，打开 PS.pyw 
 
 ## 🛠️ 目录结构说明
 
