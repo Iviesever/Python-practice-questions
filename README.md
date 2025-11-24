@@ -63,9 +63,6 @@ Python 刷题/
 
 *   Android端：下载 [pydroid3](https://blog.qaiu.top/archives/pydroid3v72) 到手机上，下载项目文件中的 [PS.pyw](https://github.com/Iviesever/Python-practice-questions/blob/master/PS.pyw) ，用 pydroid3 打开
 
-## 🛠️ 目录结构说明
-
-
 ## 📝 License
 
 本项目采用 **MIT License** 开源许可证。
