@@ -2,9 +2,9 @@ import os
 import sys
 
 def create_files():
-    print("--- 批量创建章节文件工具 (修复版) ---")
+    print("--- 批量创建章节文件工具 ---")
 
-    # 1. 获取脚本文件本身所在的绝对路径 (这是修复核心)
+    # 1. 获取脚本文件本身所在的绝对路径
     # 不管你在哪里运行这个脚本，文件都会生成在脚本旁边的文件夹里
     script_path = os.path.abspath(__file__)
     folder_path = os.path.dirname(script_path)
