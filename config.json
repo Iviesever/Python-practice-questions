@@ -1,13 +1,50 @@
 {
-  "font_size_base": 12,
-  "font_size_title": 16,
+  "font_size_base": 13,
+  "font_size_title": 14,
   "btn_scale": 1.0,
   "auto_submit": true,
   "confirm_exit": false,
-  "select_all_on_change": false,
-  "last_repo": "\u6bdb\u6982",
+  "file_selection_mode": "remembered",
+  "last_repo": "\u4e60\u601d",
   "last_files": [
-    "\u7b2c1\u7ae0.txt"
+    "\u5bfc\u8bba.txt",
+    "\u7b2c1\u7ae0.txt",
+    "\u7b2c2\u7ae0.txt",
+    "\u7b2c3\u7ae0.txt",
+    "\u7b2c4\u7ae0.txt",
+    "\u7b2c5\u7ae0.txt",
+    "\u7b2c6\u7ae0.txt",
+    "\u7b2c7\u7ae0.txt",
+    "\u7b2c8\u7ae0.txt",
+    "\u7b2c9\u7ae0.txt",
+    "\u7b2c10\u7ae0.txt",
+    "\u7b2c11\u7ae0.txt",
+    "\u7b2c12\u7ae0.txt",
+    "\u7b2c13\u7ae0.txt",
+    "\u7b2c14\u7ae0.txt",
+    "\u7b2c15\u7ae0.txt",
+    "\u7b2c16\u7ae0.txt",
+    "\u7b2c17\u7ae0.txt"
   ],
-  "default_repo": "\u6bdb\u6982"
+  "select_all_on_change": true,
+  "default_repo": "\u6bdb\u6982",
+  "last_exam_settings": {
+    "single": {
+      "count": 40,
+      "score": 0.5
+    },
+    "multi": {
+      "count": 25,
+      "score": 2.0
+    },
+    "judge": {
+      "count": 10,
+      "score": 2.0
+    },
+    "fill": {
+      "count": 5,
+      "score": 2.0
+    },
+    "time": 60
+  }
 }
