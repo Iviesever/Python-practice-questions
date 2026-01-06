@@ -1,4 +1,13 @@
-﻿import tkinter as tk
+# Copyright (c) 2026 Iviesever
+
+# The MIT License (MIT)
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# github: https://github.com/Iviesever/Python-practice-questions
+
+import tkinter as tk
 from tkinter import messagebox, ttk, simpledialog
 import tkinter.font as tkfont
 import re
@@ -6,7 +15,6 @@ import os
 import json
 import glob
 import random
-import re
 import time
 from datetime import datetime
 
@@ -21,7 +29,9 @@ class ConfigManager:
             "confirm_exit": True,
             "file_selection_mode": "remembered", # 可选值: "all" (全选) 或 "remembered" (记忆)
             "last_repo": "",       # 记录上次题库
-            "last_files": []       # 记录上次选中的文件名列表
+            "last_files": [],       # 记录上次选中的文件名列表
+            "mistake_operator": "不启用", # 默认不启用
+            "mistake_value": "1"          # 默认次数
         }
         self.config = self.defaults.copy()
         self.load()
@@ -407,30 +417,50 @@ class QuizApp:
             else:
                 self.file_listbox.select_set(0, tk.END)
 
-        btn_select_all = tk.Button(toolbar_frame, text="全选 / 全不选", command=toggle_select_all, 
-                                   font=("微软雅黑", 10), bg="#eee")
-        btn_select_all.pack(side="top", anchor="e", pady=(0, 5)) # 放在右上角
+        # 右侧：全选按钮 (先 pack 右边，防止被左边挤出屏幕)
+        btn_select_all = tk.Button(toolbar_frame, text="全选", command=toggle_select_all, 
+                                   font=("微软雅黑", 10), bg="#eee", padx=10)
+        btn_select_all.pack(side="right", anchor="e")
 
-        # 第二行：错题控制 (左对齐)
-        mistake_line = tk.Frame(toolbar_frame)
-        mistake_line.pack(side="top", fill="x")
+        # 左侧：错题控制区 (放入一个 Frame 整体靠左)
+        mistake_frame = tk.Frame(toolbar_frame)
+        mistake_frame.pack(side="left", fill="x")
         
-        self.var_mistake_mode = tk.BooleanVar(value=False)
-        chk_mistake = tk.Checkbutton(mistake_line, text="错题模式", variable=self.var_mistake_mode, 
-                                     font=fonts["normal"], fg="#d32f2f")
-        chk_mistake.pack(side="left")
+        # 标签："错题" (红色) - 去掉"模式"二字以节省空间
+        tk.Label(mistake_frame, text="错题", font=fonts["normal"], fg="#d32f2f").pack(side="left", padx=(0, 2))
         
-        tk.Label(mistake_line, text="错:", font=fonts["normal"]).pack(side="left")
-        self.combo_mistake = ttk.Combobox(mistake_line, width=5, state="readonly", font=fonts["normal"])
-        self.combo_mistake.pack(side="left", padx=2)
-        tk.Label(mistake_line, text="次", font=fonts["normal"]).pack(side="left")
+        # 下拉框 1：操作符 (宽度6)
+        self.combo_mistake_op = ttk.Combobox(mistake_frame, values=["不启用", ">=", "=="], 
+                                             width=6, state="readonly", font=fonts["normal"])
+        self.combo_mistake_op.pack(side="left", padx=2)
+        
+        # 读取配置
+        op_mem = self.cfg.get("mistake_operator")
+        self.combo_mistake_op.set(op_mem if op_mem in ["不启用", ">=", "=="] else "不启用")
+        
+        # 下拉框 2：次数 (宽度设为 3，够显示 999)
+        self.combo_mistake_val = ttk.Combobox(mistake_frame, width=3, state="readonly", font=fonts["normal"])
+        self.combo_mistake_val.pack(side="left", padx=2)
+        
+        # 标签："次"
+        tk.Label(mistake_frame, text="次", font=fonts["normal"]).pack(side="left", padx=(0, 2))
+
+        # 绑定保存配置事件
+        def save_mistake_config(event):
+            self.cfg.set("mistake_operator", self.combo_mistake_op.get())
+            self.cfg.set("mistake_value", self.combo_mistake_val.get())
+            
+        self.combo_mistake_op.bind("<<ComboboxSelected>>", save_mistake_config)
+        self.combo_mistake_val.bind("<<ComboboxSelected>>", save_mistake_config)
         
         # 列表框
         list_scroll = tk.Scrollbar(file_frame)
         list_scroll.pack(side="right", fill="y")
-        self.file_listbox = tk.Listbox(file_frame, selectmode=tk.MULTIPLE, height=5, 
-                                       font=("Consolas", self.cfg.get("font_size_base")), 
-                                       yscrollcommand=list_scroll.set)
+        self.file_listbox = tk.Listbox(file_frame, selectmode=tk.MULTIPLE, 
+                                        height=10,  # 这里控制文件框里显示的行数
+                                        font=("Consolas", self.cfg.get("font_size_base")), 
+                                        yscrollcommand=list_scroll.set,
+                                        exportselection=False) # 防止点击别处时丢失勾选
         self.file_listbox.pack(side="left", fill="both", expand=True)
         list_scroll.config(command=self.file_listbox.yview)
 
@@ -464,7 +494,7 @@ class QuizApp:
         exam_frame.pack(fill="x", pady=5)
 
         # 按钮自动填满
-        tk.Button(exam_frame, text="配置并考试", height=2, bg="#fff9c4", font=fonts["btn"], 
+        tk.Button(exam_frame, text="配置考试", height=2, bg="#fff9c4", font=fonts["btn"], 
                   command=self.show_exam_config_page).pack(side="left", expand=True, fill="x", padx=2)
         
         tk.Button(exam_frame, text="考试记录", height=2, bg="#f0f0f0", font=fonts["btn"], 
@@ -533,33 +563,30 @@ class QuizApp:
                     # 如果想在这里也默认全选，可以把下面的 pass 改成 self.file_listbox.select_set(0, tk.END)
                     pass 
 
+            # 计算错题最大值
             local_max_err = 0
             if self.all_questions_cache:
                 for q in self.all_questions_cache:
                     cnt = self.mistake_mgr.get_count(q.get_id())
                     if cnt > local_max_err: local_max_err = cnt
             
-            if getattr(self, 'combo_mistake', None) and self.combo_mistake.winfo_exists():
-                vals = ["所有"] + list(range(1, local_max_err + 1)) if local_max_err > 0 else ["无"]
-                self.combo_mistake['values'] = vals
+            # 更新第二个下拉框（次数）
+            if getattr(self, 'combo_mistake_val', None) and self.combo_mistake_val.winfo_exists():
+                # --- 改动开始：确保列表至少包含 "1"，并且从 1 开始到 max ---
+                # 如果最大错误数是 0，也显示 1，方便用户预设
+                limit = max(1, local_max_err) 
+                vals = [str(i) for i in range(1, limit + 1)] 
+                self.combo_mistake_val['values'] = vals
+                # --- 改动结束 ---
                 
-                # 如果之前没选值，或者当前值不在新列表里，重置为第一个
-                if self.combo_mistake.get() not in [str(v) for v in vals]:
-                    if local_max_err > 0: self.combo_mistake.current(0) # 默认选 "所有"
-                    else: self.combo_mistake.set("无")
+                # 尝试恢复记忆的值
+                mem_val = self.cfg.get("mistake_value")
+                if mem_val in vals:
+                    self.combo_mistake_val.set(mem_val)
+                else:
+                    # 如果记忆无效，默认选第1个（也就是 "1"）
+                    if vals: self.combo_mistake_val.current(0)
 
-        # 错题库联动
-        local_max_err = 0
-        if self.all_questions_cache:
-            for q in self.all_questions_cache:
-                cnt = self.mistake_mgr.get_count(q.get_id())
-                if cnt > local_max_err: local_max_err = cnt
-        
-        if getattr(self, 'combo_mistake', None) and self.combo_mistake.winfo_exists():
-            vals = ["所有"] + list(range(1, local_max_err + 1)) if local_max_err > 0 else ["无"]
-            self.combo_mistake['values'] = vals
-            if local_max_err > 0: self.combo_mistake.current(0)
-            else: self.combo_mistake.set("无")
 
 
     def get_allowed_types(self):
@@ -587,25 +614,27 @@ class QuizApp:
         allowed = self.get_allowed_types()
         qs = [q for q in qs if q.q_type in allowed]
         
-        if self.var_mistake_mode.get():
-            target_err = self.combo_mistake.get() # 获取下拉框的值 (如 "所有", "1", "2"...)
-            if not target_err or target_err == "无":
-                return messagebox.showinfo("提示", "当前没有错题记录，无法开启错题模式。")
+        op = self.combo_mistake_op.get()
+        target_val_str = self.combo_mistake_val.get()
+        
+        if op != "不启用":
+            if not target_val_str.isdigit():
+                return messagebox.showwarning("提示", "请选择有效的错题次数！")
             
+            target_val = int(target_val_str)
             filtered_qs = []
+            
             for q in qs:
                 err_count = self.mistake_mgr.get_count(q.get_id())
-                if target_err == "所有":
-                    if err_count > 0: filtered_qs.append(q)
-                else:
-                    try:
-                        if err_count == int(target_err): filtered_qs.append(q)
-                    except: pass
+                if op == "==":
+                    if err_count == target_val: filtered_qs.append(q)
+                elif op == ">=":
+                    if err_count >= target_val: filtered_qs.append(q)
             
-            qs = filtered_qs # 用过滤后的错题列表覆盖原列表
+            qs = filtered_qs
             
             if not qs:
-                return messagebox.showinfo("提示", f"在所选文件中，没有找到符合“错误{target_err}次”的题目。")
+                return messagebox.showinfo("提示", f"在所选文件中，没有找到符合“错误 {op} {target_val} 次”的题目。")
         
         if not qs: return messagebox.showerror("错误", "所选条件（文件/题型/错题）下没有题目！")
         self.start_quiz(qs, shuffle)
@@ -904,7 +933,7 @@ class QuizApp:
         if hasattr(self, 'timer_label') and self.timer_label.winfo_exists():
             m, s = divmod(remaining, 60)
             color = "red" if remaining < 300 else "black" # 最后5分钟变红
-            self.timer_label.config(text=f"剩余时间: {m:02d}:{s:02d}", fg=color)
+            self.timer_label.config(text=f"剩余 {m:02d}:{s:02d}", fg=color)
             
         self.exam_timer_id = self.root.after(1000, self.update_exam_timer)
     
@@ -1122,40 +1151,65 @@ class QuizApp:
 
         q = self.current_q = self.current_queue[self.current_index]
         fonts = self.get_fonts()
+
+
+
+
         
-        # 顶部导航栏
-        top_bar = tk.Frame(self.root, bg="#eee", pady=8, padx=10)
+        # 1. 顶部容器 (减小内边距 padx/pady 以节省空间)
+        top_bar = tk.Frame(self.root, bg="#eee", pady=5, padx=5)
         top_bar.pack(fill="x", side="top")
         
-        tk.Button(top_bar, text="< 主页", command=self.return_to_menu, font=fonts["ui"], bg="#ddd").pack(side="left")
+        # 2. 左侧：返回按钮 (去掉 width 限制，让它自动适应 "< 主页" 的宽度)
+        tk.Button(top_bar, text="< 主页", command=self.return_to_menu, 
+                  font=fonts["ui"], bg="#ddd").pack(side="left", padx=(0, 5))
         
-        center_info = f"答题卡（{self.current_index + 1} / {len(self.current_queue)}）"
-        
-        lbl_progress = tk.Label(top_bar, text=center_info, bg="#eee", fg="#1976d2", 
-                                cursor="hand2", font=("微软雅黑", fonts["ui"][1], "bold"))
-        
-        lbl_progress.place(relx=0.4, rely=0.5, anchor="center")
-        
-        lbl_progress.bind("<Button-1>", self.show_card_page)
-        
+        # 3. 右侧容器 (优先 pack 右侧，保证不被挤掉)
         right_frame = tk.Frame(top_bar, bg="#eee")
-        right_frame.pack(side="right", padx=10) 
+        right_frame.pack(side="right") # 靠右停靠
 
-        # 上半部分容器：放“错误次数”和“来源”
-        info_frame = tk.Frame(right_frame, bg="#eee")
-        info_frame.pack(side="top")
+        # === 核心修改部分开始 ===
+        
+        # 创建一个“上半行”容器，用来放 错误次数 和 来源文件
+        # anchor="center" 确保它们居中，side="top" 放在 right_frame 的上面
+        info_row = tk.Frame(right_frame, bg="#eee")
+        info_row.pack(side="top", anchor="center") 
 
+        # --- 右侧组件 2：错误次数 ---
+        # 注意：这里要 pack 到 info_row 里面
         err_count = self.mistake_mgr.get_count(q.get_id())
         err_color = "#d32f2f" if err_count > 0 else "#999"
-        
-        # 将这两个标签放入 info_frame
-        tk.Label(info_frame, text=f"错误: {err_count}", bg="#eee", font=fonts["ui"], fg=err_color).pack(side="left", padx=5)
-        tk.Label(info_frame, text=f"来源: {q.source_file}", bg="#eee", font=fonts["ui"], fg="#666").pack(side="left", padx=5)
+        tk.Label(info_row, text=f"错误 {err_count} ", bg="#eee", font=fonts["ui"], 
+                 fg=err_color).pack(side="left", padx=2)
 
-        # 下半部分：倒计时 (仅考试模式显示，且居中)
+        # --- 右侧组件 3：来源文件 ---
+        # 注意：这里也要 pack 到 info_row 里面
+        f_name = q.source_file
+        if len(f_name) > 8: f_name = f_name[:6] + ".."
+        tk.Label(info_row, text=f"{f_name}", bg="#eee", font=fonts["ui"], 
+                 fg="#666").pack(side="left", padx=2)
+
+        # --- 右侧下半部分：倒计时 (仅考试模式显示) ---
+        # 直接 pack 到 right_frame 里面，因为 info_row 占了上面，它自然会排在下面
         if self.exam_mode:
-            self.timer_label = tk.Label(right_frame, text="剩余时间: --:--", font=fonts["ui"], bg="#eee", fg="#1976d2")
-            self.timer_label.pack(side="top", pady=(2, 0), anchor="center")
+            self.timer_label = tk.Label(right_frame, text="剩余 --:--", font=("微软雅黑", 10, "bold"), 
+                                      bg="#eee", fg="#1976d2")
+            self.timer_label.pack(side="top", anchor="center", pady=(0, 0))
+
+
+
+        # 4. 中间：进度 (填满剩余空间，居中显示)
+        center_text = f"答题卡 {self.current_index + 1} / {len(self.current_queue)}"
+        lbl_progress = tk.Label(top_bar, text=center_text, bg="#eee", fg="#1976d2",
+                                cursor="hand2", font=("微软雅黑", fonts["ui"][1], "bold"))
+        # 使用 pack fill=x 自动占据中间剩余空间
+        lbl_progress.pack(side="left", fill="x", expand=True)
+        lbl_progress.bind("<Button-1>", self.show_card_page)
+
+
+
+
+
 
         bottom_frame = tk.Frame(self.root, pady=20, bg="#f0f0f0")
         bottom_frame.pack(side="bottom", fill="x")
@@ -1173,13 +1227,20 @@ class QuizApp:
         nav_frame = tk.Frame(btn_container, bg="#f0f0f0")
         nav_frame.pack(side="top")
 
+        # 使用 Grid + uniform 强制按钮等宽 
+        # 配置两列，权重相同(weight=1)，并指定 uniform 组名相同(比如 "nav")
+        # 这样无论文字长短，两列的宽度都会被强制拉伸到一样宽（以较宽者为准）
+        nav_frame.columnconfigure(0, weight=1, uniform="nav")
+        nav_frame.columnconfigure(1, weight=1, uniform="nav")
+
         self.btn_prev = tk.Button(nav_frame, text="<< 上一题", command=self.prev_question, 
                                   font=fonts["btn"], width=15, height=2, bg="#e0e0e0")
-        self.btn_prev.pack(side="left", padx=10) # padx 保证两个按钮中间有空隙
+        # grid 布局，sticky="ew" 表示横向拉伸填满格子
+        self.btn_prev.grid(row=0, column=0, padx=5, sticky="ew") 
         
         self.btn_next = tk.Button(nav_frame, text="下一题 >>", command=self.next_question, 
                                   state="normal", font=fonts["btn"], width=15, height=2, bg="#2196f3", fg="white")
-        self.btn_next.pack(side="left", padx=10)
+        self.btn_next.grid(row=0, column=1, padx=5, sticky="ew")
 
         if self.current_index == 0:
             self.btn_prev.config(state="disabled")
@@ -1208,14 +1269,14 @@ class QuizApp:
         
         
         self.lbl_question = tk.Text(content_box, font=fonts["title"], bg="white", fg="black",
-                                    relief="flat",          
-                                    highlightthickness=0,   
-                                    wrap="char",            
-                                    height=1)              
+                                    relief="flat", highlightthickness=0, wrap="char", height=1,
+                                    spacing1=5, spacing3=5) # 文字内部行间距           
         
         self.lbl_question.insert("1.0", full_text)         
-        self.lbl_question.configure(state="disabled")      
-        self.lbl_question.pack(fill="x", pady=(0, 20))
+        self.lbl_question.configure(state="disabled")    
+
+        # 增大 pady 的第二个值 (0, 30)，让题目和选项A拉开距离
+        self.lbl_question.pack(fill="x", pady=(0, 30))   
 
         # 增加一个动态调整高度的函数
         # 因为 Text 组件默认不会像 Label 那样根据内容自动撑开高度，需要手动算
@@ -1252,7 +1313,9 @@ class QuizApp:
             for opt in q.options:
                 # 每一行选项用一个 Frame 包裹，方便布局
                 row_frame = tk.Frame(opts_frame, bg="white", pady=5)
-                row_frame.pack(fill="x", anchor="w")
+
+                # 增加 pady=8，让选项与选项之间拉开距离
+                row_frame.pack(fill="x", anchor="w", pady=8) 
                 
                 # 左边放单选圆点 (不带文字)
                 # value=opt[0] 取出 "A" / "B" 等作为值
@@ -1260,14 +1323,18 @@ class QuizApp:
                                     bg="white", activebackground="white", 
                                     tristatevalue="TRISTATE_SAFE",
                                     command=auto_submit_if_enabled)
-                rb.pack(side="left", anchor="n") # 对齐顶部
+
+                # 这样当文字有很多行时，圆点会在正中间
+                rb.pack(side="left", anchor="center")
                 
                 # 右边放 Text 组件显示文字 (支持自动换行)
+                # 增加 spacing 参数，优化多行选项的阅读体验
                 txt_opt = tk.Text(row_frame, font=fonts["normal"], bg="white", fg="black",
-                                  relief="flat", width=1, height=1, wrap="char") # wrap="char" 是防截断的关键
+                                  relief="flat", width=1, height=1, wrap="char", # wrap="char" 是防截断的关键
+                                  spacing1=2, spacing3=2) 
                 txt_opt.insert("1.0", opt)
                 txt_opt.configure(state="disabled")
-                txt_opt.pack(side="left", fill="x", expand=True)
+                txt_opt.pack(side="left", fill="x", expand=True, padx=(5, 0)) # 文字离圆点远一点
                 
                 # 绑定自适应高度
                 txt_opt.bind("<Configure>", lambda e, w=txt_opt: fit_height(e, w))
@@ -1283,7 +1350,8 @@ class QuizApp:
         elif q.q_type == 'multi':
             for opt in q.options:
                 row_frame = tk.Frame(opts_frame, bg="white", pady=5)
-                row_frame.pack(fill="x", anchor="w")
+                # <--- 修改3：增加 pady=8，让选项之间变宽
+                row_frame.pack(fill="x", anchor="w", pady=8)
                 
                 var = tk.IntVar(value=0)
                 self.input_vars.append((opt[0], var))
@@ -1291,14 +1359,16 @@ class QuizApp:
                 # 左边放复选方框
                 cb = tk.Checkbutton(row_frame, variable=var, onvalue=1, offvalue=0, 
                                     bg="white", activebackground="white")
-                cb.pack(side="left", anchor="n")
+
+                cb.pack(side="left", anchor="center")
                 
                 # 右边放 Text 组件
                 txt_opt = tk.Text(row_frame, font=fonts["normal"], bg="white", fg="black",
-                                  relief="flat", width=1, height=1, wrap="char")
+                                  relief="flat", width=1, height=1, wrap="char",
+                                  spacing1=2, spacing3=2)
                 txt_opt.insert("1.0", opt)
                 txt_opt.configure(state="disabled")
-                txt_opt.pack(side="left", fill="x", expand=True)
+                txt_opt.pack(side="left", fill="x", expand=True, padx=(5, 0))
                 
                 txt_opt.bind("<Configure>", lambda e, w=txt_opt: fit_height(e, w))
                 
