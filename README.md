@@ -6,7 +6,7 @@
 
 **核心目的：** 专为复习 **学习通 (Chaoxing)** 上的测验、作业和考试题目而设计。无需联网，支持错题回顾，**新增模拟考试模式**，支持 Android (Pydroid 3) 完美运行。
 
-![screenshot](./img/screenshot.png)
+![screenshot](./img/img_4_0.png)
 
 ## ✨ 功能特点
 
