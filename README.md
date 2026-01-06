@@ -33,11 +33,12 @@
 
 ## 🚀 快速开始
 
-### 1. 环境要求
+### 1. 下载与运行
 
-*   **PC端**：安装 [Python 3.x](https://www.python.org/) 。
-*   **Android端**：安装 [pydroid3](https://blog.qaiu.top/archives/pydroid3v72)
-*   **依赖**：本项目仅依赖 Python 标准库（`tkinter`, `json`, `re`, `os`, `random`, `datetime`），**无需安装任何 pip 包**。
+- **Windows端**：下载并直接双击运行 [PS.exe](https://github.com/Iviesever/Python-practice-questions/releases/latest)
+- **Android端 (Pydroid 3)**：
+  1. 下载整个[项目文件夹](https://github.com/Iviesever/Python-practice-questions/archive/refs/heads/master.zip)，传输到手机。
+  2. 用 [pydroid3](https://blog.qaiu.top/archives/pydroid3v72) 打开项目文件夹的PS.pyw，运行
 
 ### 2. 📂 如何制作题库 (关键步骤)
 
@@ -60,7 +61,7 @@
 
 ```text
 Python 刷题/
-├── PS.pyw               # 主程序源码 (无控制台窗口运行)
+├── PS.exe              # 主程序
 ├── config.json          # (自动生成) 用户通用设置
 ├── mistakes.json        # (自动生成) 错题记录数据库
 ├── exam_presets.json    # (自动生成) 考试配置预设
@@ -73,13 +74,6 @@ Python 刷题/
     └── 计算机基础/
         └── 题库1.txt
 ```
-
-### 4. 运行软件
-
-- **Windows端**：直接双击运行 PS.pyw。
-- **Android端 (Pydroid 3)**：
-  1. 下载整个[项目文件夹](https://github.com/Iviesever/Python-practice-questions/archive/refs/heads/master.zip)，传输到手机。
-  2. 用 [pydroid3](https://blog.qaiu.top/archives/pydroid3v72) 打开项目文件夹的PS.pyw，运行
 
 ## ⚙️ 使用技巧
 
@@ -94,8 +88,6 @@ Python 刷题/
 这意味着你可以自由地使用、复制、修改、合并、出版发行、散布、再授权及贩售本软件的副本，只需包含原作者的版权声明和许可声明即可。
 
 ------
-
-
 
 ### The MIT License (MIT)
 
